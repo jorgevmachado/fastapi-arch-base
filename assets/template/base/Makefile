@@ -10,6 +10,7 @@ format:
 
 init:
 	poetry install
+	@if [ ! -f .env ]; then cp .env.example .env; fi
 	docker compose up -d
 	make migrate
 
@@ -47,5 +48,4 @@ rollback-migration:
 
 migrate:
 	poetry run alembic upgrade head
-
 
