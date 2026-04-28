@@ -100,6 +100,15 @@ def replace_placeholders_in_project(target_dir: Path, replacements: dict[str, st
         if file_path.is_file():
             replace_placeholders_in_file(file_path, replacements)
 
+def copy_env_example_to_env(target_dir: Path) -> None:
+    env_example_path = target_dir / ".env.example"
+    env_path = target_dir / ".env"
+
+    if not env_example_path.exists():
+        raise FileNotFoundError(f"Arquivo .env.example não encontrado: {env_example_path}")
+
+    shutil.copyfile(env_example_path, env_path)
+
 def find_remaining_placeholders(target_dir: Path) -> dict[str, list[str]]:
     remaining: dict[str, list[str]] = {}
     placeholder_pattern = re.compile(r"__[A-Z0-9_]+__")
@@ -205,6 +214,7 @@ def main() -> None:
 
     replacements = build_replacements(args)
     replace_placeholders_in_project(target_dir, replacements)
+    copy_env_example_to_env(target_dir)
 
     remaining = find_remaining_placeholders(target_dir)
     if remaining:
@@ -215,6 +225,7 @@ def main() -> None:
 
     print(f"Template base copiado para: {target_dir}")
     print("Placeholders Substituidos com sucesso.")
+    print("Arquivo .env criado a partir do .env.example.")
 
 if __name__ == "__main__":
     main()    

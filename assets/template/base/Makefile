@@ -8,6 +8,11 @@ format:
 	poetry run make lint-fix
 	poetry run make lint-format
 
+init:
+	poetry install
+	docker compose up -d
+	make migrate
+
 test-app:
 	poetry run pytest -x --cov=app -vv
 test-coverage:
@@ -42,6 +47,5 @@ rollback-migration:
 
 migrate:
 	poetry run alembic upgrade head
-
 
 
