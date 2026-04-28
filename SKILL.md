@@ -61,7 +61,10 @@ Ao copiar o template, substituir todos os placeholders presentes nos arquivos do
 
 ## Recursos
 - Template base: `assets/template/`
-- Referência adicionais: `references/`
+- Referencias adicionais:
+  - `references/placeholders.md`
+  - `references/template-map.md`
+  - `references/examples.md`
 
 ## Execução
 Para gerar um novo projeto, a skill deve executar o script:
