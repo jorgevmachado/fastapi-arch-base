@@ -35,6 +35,16 @@ def get_template_base_dir() -> Path:
 def get_template_optional_dir( ) -> Path:
     return get_skill_root() / "assets" / "template" / "optional"
 
+def resolve_target_dir(target_dir: str) -> Path:
+    normalized_target_dir = target_dir.strip()
+
+    if normalized_target_dir == "/~":
+        normalized_target_dir = "~"
+    elif normalized_target_dir.startswith("/~/"):
+        normalized_target_dir = "~/" + normalized_target_dir[3:]
+
+    return Path(normalized_target_dir).expanduser().resolve()
+
 def copy_base_template(target_dir: Path) -> None:
     source_dir = get_template_base_dir()
 
@@ -184,12 +194,12 @@ def main() -> None:
           args.use_docker = prompt_bool("Deseja incluir Docker?", False)
 
 
-    target_dir = Path(args.target_dir).resolve()
+    target_dir = resolve_target_dir(args.target_dir)
     project_slug = build_project_slug(args.project_name)
 
     print("Projeto:", args.project_name)
     print("Project slug:", project_slug)
-    print("Diretório de destino:", args.target_dir)
+    print("Diretório de destino:", target_dir)
     print("Autor do projeto:", args.project_author_name)
     print("Email do autor do projeto:", args.project_author_email)
     print("Host do banco de dados:", args.db_host)
