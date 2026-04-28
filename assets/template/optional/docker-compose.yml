@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: __PROJECT_SLUG___db
+    image: postgres:latest
+    ports:
+      - "__DB_PORT__:5432"
+    environment:
+      POSTGRES_USER: __DB_USER__
+      POSTGRES_PASSWORD: __DB_PASSWORD__
+      POSTGRES_DB: __DB_NAME__
+    volumes:
+      - postgres_data:/var/lib/postgresql/data      
+    restart: unless-stopped
+  redis:
+    image: redis:latest
+    container_name: __PROJECT_SLUG___redis
+    ports:
+      - "6379:6379"
+    restart: always
+volumes:
+  postgres_data:
