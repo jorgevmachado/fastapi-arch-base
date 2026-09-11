@@ -1,11 +1,11 @@
 from pathlib import Path
 import subprocess
 
-container_name = "machado-finance-api_db"
+container_name = "__PROJECT_SLUG___db"
 
-database = "machadoFinanceDB"
-user = "machado"
-password = "machado"
+database = "__DB_NAME__"
+user = "__DB_USER__"
+password = "__DB_PASSWORD__"
 
 dump_file = Path("./migrations/backup_db.dump")
 
