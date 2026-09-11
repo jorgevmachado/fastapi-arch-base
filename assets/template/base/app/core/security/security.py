@@ -11,12 +11,20 @@ from jwt import DecodeError, ExpiredSignatureError, decode, encode
 from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_session
 from app.core.settings import Settings
+from app.models import (
+    Pokedex,
+    PokedexEntry,
+    Pokemon,
+    Trainer,
+    Type,
+)
 from app.models.user import User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/login', refreshUrl='auth/refresh')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", refreshUrl="auth/refresh")
 
 settings = Settings()
 pwd_context = PasswordHash.recommended()
@@ -33,11 +41,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
 
-    expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
+    expire = datetime.now(tz=ZoneInfo("UTC")) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
-    to_encode.update({'exp': expire})
+    to_encode.update({"exp": expire})
     encoded_jwt = encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
@@ -48,13 +56,12 @@ async def get_current_user(
 ) -> User:
     credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
-        detail='Could not validate credentials',
-        headers={'WWW-Authenticate': 'Bearer'},
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
     )
-
     try:
         payload = decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        subject: str | None = payload.get('sub')
+        subject: str | None = payload.get("sub")
 
         if not subject:
             raise credentials_exception
@@ -64,12 +71,66 @@ async def get_current_user(
     except (DecodeError, ExpiredSignatureError, ValueError):
         raise credentials_exception
 
-    user = await session.scalar(
-        select(User)        
+    trainer_relations = selectinload(User.trainer)
+    pokedex_pokemon_relations = (
+        trainer_relations.selectinload(Trainer.pokedex)
+        .selectinload(Pokedex.entries)
+        .selectinload(PokedexEntry.pokemon)
+    )
+
+    query = (
+        select(User)
+        .options(
+            trainer_relations.selectinload(Trainer.user),
+            trainer_relations.selectinload(Trainer.pokedex),
+            pokedex_pokemon_relations.selectinload(Pokemon.images),
+            pokedex_pokemon_relations.selectinload(Pokemon.habitat),
+            pokedex_pokemon_relations.selectinload(Pokemon.shape),
+            pokedex_pokemon_relations.selectinload(Pokemon.growth_rate),
+            pokedex_pokemon_relations.selectinload(Pokemon.types).selectinload(
+                Type.strengths
+            ),
+            pokedex_pokemon_relations.selectinload(Pokemon.types).selectinload(
+                Type.weaknesses
+            ),
+            pokedex_pokemon_relations.selectinload(Pokemon.moves),
+            pokedex_pokemon_relations.selectinload(Pokemon.abilities),
+            pokedex_pokemon_relations.selectinload(Pokemon.encounters),
+            pokedex_pokemon_relations.selectinload(Pokemon.evolutions).selectinload(
+                Pokemon.images
+            ),
+            pokedex_pokemon_relations.selectinload(Pokemon.evolutions).selectinload(
+                Pokemon.habitat
+            ),
+            pokedex_pokemon_relations.selectinload(Pokemon.evolutions).selectinload(
+                Pokemon.shape
+            ),
+            pokedex_pokemon_relations.selectinload(Pokemon.evolutions).selectinload(
+                Pokemon.growth_rate
+            ),
+        )
         .where(User.id == user_id)
     )
+    user = await session.scalar(query)
 
     if not user:
         raise credentials_exception
 
     return user
+
+
+async def get_current_trainer(
+    session: AsyncSession = Depends(get_session),
+    token: str = Depends(oauth2_scheme),
+) -> Trainer:
+    user = await get_current_user(session, token)
+
+    trainer = await session.scalar(select(Trainer).where(Trainer.user_id == user.id))
+
+    if not trainer:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Trainer not found",
+        )
+
+    return trainer

@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/__PROJECT_SLUG__.iml" filepath="$PROJECT_DIR$/.idea/__PROJECT_SLUG__.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/fastapi-arch-base.iml" filepath="$PROJECT_DIR$/.idea/fastapi-arch-base.iml" />
     </modules>
   </component>
